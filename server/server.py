@@ -1,5 +1,5 @@
 import socket
-#import threading
+import threading
 
 
 class Server():
@@ -32,7 +32,7 @@ class ClientThread(threading.Thread):
         self.sock = clientSock
         self.addr = clientAddr
         self.login = login
-        print('[*]New user added: %s', self.login)
+        print('[*] New user added: %s' % self.login)
 
     def run(self):
         msg = ''
@@ -46,6 +46,7 @@ class ClientThread(threading.Thread):
 def main():
     server = Server()
     server.run()
+    server.listen()
 
 
 if __name__ == '__main__':
