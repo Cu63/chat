@@ -9,6 +9,7 @@ class Client():
         self.login = ''
         self.connection = None
         self.thread = None
+        self.isactive = True
 
     def creat_connection(self):
         self.connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -33,11 +34,16 @@ class Client():
             self.connection.send(s.encode('utf-8'))
         except:
             print("[!?] Can't send message...")
+            self.close()
 
     def close(self):
         print('[*] Disconnect')
-        self.thread.stop()
+        self.thread.disconnect()
+        self.isactive = False
         self.connection.close()
+
+    def status(self):
+        return self.isactive
 
 
 class GetMsg(threading.Thread):
@@ -48,15 +54,15 @@ class GetMsg(threading.Thread):
 
     def run(self):
         print('[*] Loading chat...')
-        while self.isactive == True:
-            try:
-                msg = self.sock.recv(1024).decode('utf-8')
-                print(msg)
-            except:
-                print("[!?] can't receive msg from server")
+        while self.isactive:
+            msg = self.sock.recv(1024).decode('utf-8')
+            if msg == '[*] Connection closed':
                 self.sock.close()
+                break
+            else:
+                print(msg)
 
-    def stop(self):
+    def disconnect(self):
         self.isactive = False
 
 
@@ -64,10 +70,9 @@ def main():
     connection = Client()
     connection.creat_connection()
     msg = ''
-    while msg != 'bye':
+    while msg != 'bye' and connection.status():
         msg = input("%s: " % connection.get_name())
         connection.send_msg(msg)
-
     connection.close()
 
 
