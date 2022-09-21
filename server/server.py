@@ -14,12 +14,14 @@ class Server():
         # open socket
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.bind((self.ip, self.port))
+        self.thread = ServerThread(self.users, self.msg_queue)
+        self.thread.start()
         print(f'[*] Starting server on {self.ip}:{self.port}')
 
     def listen(self):
         # listen socke for new connection
         while True:
-            user = {'sock': 0, 'thread': 0}
+            user = {'sock': 0, 'thread': 0, 'login': ''}
             self.server.listen(5)
             client, address = self.server.accept()
             print(f'[*] Accepted connection from {address[0]}:{address[1]}')
@@ -28,10 +30,9 @@ class Server():
             client.send(('[*] Hello, %s' % login).encode('utf-8'))
             # add user to the users dict
             user['sock'] = client
-
+            user['login'] = login
             # start thread for user
-            user['thread'] = ClientThread(client, address,
-                                               login, self.msg_queue)
+            user['thread'] = ClientThread(client, login, self.msg_queue)
             user['thread'].start()
             self.users[address] = user
 
@@ -39,13 +40,14 @@ class Server():
         print('[*] Shut down the server...')
         print(self.msg_queue)
         # close connection for all active users
+        self.thread.disconnect()
         for addr in self.users:
             self.users[addr]['thread'].disconnect()
 
 
 class ServerThread(threading.Thread):
     def __init__(self, users, msg_queue):
-        threading.Thread.__init__(start)
+        threading.Thread.__init__(self)
         self.users = users
         self.msg_queue = msg_queue
         self.isactive = True
@@ -58,20 +60,25 @@ class ServerThread(threading.Thread):
 
     def chek_users(self):
         for addr in self.users:
-            if users[addr].get_status() == False:
+            if self.users[addr]['thread'].get_status() == False:
                 print(f'[*] Detelet {addr[0]}:{addr[1]} from user list')
-                users.pop[addr]
+                self.users.pop[addr]
 
     def send_msg(self):
-        for addr in users:
-            pass
+        while self.msg_queue != [] and self.isactive:
+            s = self.msg_queue.pop(0)
+            for addr in self.users:
+                login = self.users[addr]['login']
+                if s[:s.find(': ')] != login:
+                    self.users[addr]['sock'].send(s.encode('utf-8'))
 
+    def disconnect(self):
+        self.isactive = False
 
 class ClientThread(threading.Thread):
-    def __init__(self, clientSock, clientAddr, login, chat):
+    def __init__(self, clientSock, login, chat):
         threading.Thread.__init__(self)
         self.sock = clientSock
-        self.addr = clientAddr
         self.login = login
         self.chat = chat
         self.isactive = True
@@ -91,7 +98,6 @@ class ClientThread(threading.Thread):
             else:
                 self.disconnect()
                 break
-        print('Client at ', self.addr, ' disconected...')
 
 # close connection
     def disconnect(self):
