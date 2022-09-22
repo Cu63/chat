@@ -59,7 +59,7 @@ class ServerThread(threading.Thread):
             self.send_msg()
 
     def chek_users(self):
-        for addr in self.users:
+        for addr in self.users.copy():
             if self.users[addr]['thread'].get_status() == False:
                 print(f'[*] Detelet {addr[0]}:{addr[1]} from user list')
                 self.users.pop[addr]
@@ -67,7 +67,7 @@ class ServerThread(threading.Thread):
     def send_msg(self):
         while self.msg_queue != [] and self.isactive:
             s = self.msg_queue.pop(0)
-            for addr in self.users:
+            for addr in self.users.copy():
                 login = self.users[addr]['login']
                 if s[:s.find(': ')] != login:
                     self.users[addr]['sock'].send(s.encode('utf-8'))
